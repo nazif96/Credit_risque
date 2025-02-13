@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 # Charger le modèle avec gestion d'erreur
-model_path = "log_reg_model.joblib"
+model_path = "logistic_regression_model.joblib"
 if os.path.exists(model_path):
     model = joblib.load(model_path)
 else:
@@ -23,49 +23,36 @@ st.sidebar.header("📝 Informations du client")
 age = st.sidebar.number_input("Âge du client", min_value=18, max_value=100, value=30)
 revenu = st.sidebar.number_input("Revenu mensuel (€)", min_value=0, value=3000)
 montant_loan = st.sidebar.number_input("Montant du prêt demandé (€)", min_value=0, value=5000)
-
-# Vérifier les incohérences
-if montant_loan > revenu * 12:
-    st.sidebar.warning("⚠️ Attention : Le montant du prêt dépasse 12 mois de revenu.")
+num_existing_credits = st.sidebar.number_input("Nombre de crédits existants", min_value=0, value=1)
+checking_account_status = st.sidebar.selectbox("Statut du compte bancaire", [0, 1])
 
 # Sélection des caractéristiques catégoriques
-job = st.sidebar.selectbox("🛠 Emploi", ["Qualifie", "Non qualifie", "Hautement_qualifie_Indépendant", "Chomeur"])
+job = st.sidebar.selectbox("🛠 Emploi", ["Qualifie", "Non qualifie", "Hautement_qualifie_Indépendant"])
 credit_history = st.sidebar.selectbox("💳 Historique de crédit", [
-    "Crédit_Autres_crédits_critique", "Crédits_existants_remboursés", "Paiements_retardés_auparavant",
-    "Aucun_crédit", "crédits_payés"
+    "Crédit_Autres_crédits_critique", "Crédits_existants_remboursés", "Paiements_retardés_auparavant", "crédits_payés"
 ])
 other_debtors = st.sidebar.selectbox("👥 Autres débiteurs / garants", ["Aucun", "Garant", "Co-emprunteur"])
-housing = st.sidebar.selectbox("🏠 Logement", ["Propriétaire", "Logé_gratuitement", "Locataire"])
+housing = st.sidebar.selectbox("🏠 Logement", ["Propriétaire", "Logé_gratuitement"])
 saving_status = st.sidebar.selectbox("💰 Épargne", ["Pas_dépargne", "Moins_de_100", "Entre 100_et_500", "Entre 500_et_1000", "Plus_de_1000"])
 credit_purpose = st.sidebar.selectbox("🎯 Objet du crédit", [
     "Radio_TV", "Education", "Mobilier_ou_Equipement", "Voiture_neuve", "Voiture_occasion", "Affaires",
     "Appareil_electromenager", "Reparations", "Autres", "Reconversion"
 ])
 
-# Mapping des valeurs catégoriques en numériques
-job_map = {
-    "Qualifie": 0, "Non qualifie": 1, "Hautement_qualifie_Indépendant": 2, "Chomeur": 3
-}
-credit_history_map = {
-    "Crédit_Autres_crédits_critique": 0, "Crédits_existants_remboursés": 1, "Paiements_retardés_auparavant": 2,
-    "Aucun_crédit": 3, "crédits_payés": 4
-}
-other_debtors_map = {"Aucun": 0, "Garant": 1, "Co-emprunteur": 2}
-housing_map = {"Propriétaire": 0, "Logé_gratuitement": 1, "Locataire": 2}
-saving_status_map = {
-    "Pas_dépargne": 0, "Moins_de_100": 1, "Entre 100_et_500": 2, "Entre 500_et_1000": 3, "Plus_de_1000": 4
-}
-credit_purpose_map = {
-    "Radio_TV": 0, "Education": 1, "Mobilier_ou_Equipement": 2, "Voiture_neuve": 3, "Voiture_occasion": 4,
-    "Affaires": 5, "Appareil_electromenager": 6, "Reparations": 7, "Autres": 8, "Reconversion": 9
-}
+# Encodage One-Hot
+credit_history_features = [credit_history == f for f in ["Crédit_Autres_crédits_critique", "Crédits_existants_remboursés", "Paiements_retardés_auparavant", "crédits_payés"]]
+credit_purpose_features = [credit_purpose == f for f in ["Radio_TV", "Education", "Mobilier_ou_Equipement", "Voiture_neuve", "Voiture_occasion", "Affaires", "Appareil_electromenager", "Reparations", "Autres", "Reconversion"]]
+other_debtors_features = [other_debtors == "Co-emprunteur", other_debtors == "Garant"]
+housing_features = [housing == "Logé_gratuitement"]
+job_features = [job == "Hautement_qualifie_Indépendant", job == "Non qualifie"]
+saving_status_features = [saving_status == f for f in ["Entre 500_et_1000", "Moins_de_100", "Pas_dépargne", "Plus_de_1000"]]
 
 # Création de la matrice d'entrée
-X_new = np.array([[
-    age, revenu, montant_loan,
-    job_map[job], credit_history_map[credit_history], other_debtors_map[other_debtors],
-    housing_map[housing], saving_status_map[saving_status], credit_purpose_map[credit_purpose]
-]], dtype=float)
+X_new = np.array([
+    [age, revenu, montant_loan, num_existing_credits, checking_account_status] +
+    credit_history_features + credit_purpose_features + other_debtors_features +
+    housing_features + job_features + saving_status_features
+], dtype=float)
 
 # Vérifier la structure des données
 if X_new.shape[1] != expected_features:
@@ -80,14 +67,10 @@ if os.path.exists(scaler_path):
 
 # Bouton de prédiction
 if st.sidebar.button("📊 Prédire"):
-    # Prédiction de la classe (0 = BAD, 1 = GOOD)
     prediction = model.predict(X_new)[0]
-    statut = "GOOD" if prediction == 1 else "BAD"
-
-    # Prédiction de la probabilité d'acceptation
     prob_good = model.predict_proba(X_new)[0][1]  # Probabilité d'être "GOOD"
-
-    # Affichage des résultats
+    statut = "GOOD" if prediction == 1 else "BAD"
+    
     st.subheader("📌 Résultat de la Prédiction")
     st.write(f"🔍 **Statut prédit :** `{statut}`")
     st.write(f"📊 **Probabilité d'éligibilité au crédit** : `{prob_good:.2%}`")
