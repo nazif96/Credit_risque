@@ -2,9 +2,9 @@ import streamlit as st
 import joblib
 import numpy as np
 
-st.title("🎈 ")
+st.title("🎈 Eligibility App ")
 st.write(
-    "Interface Web Simple d'  éligible ou non  du client à un crédit"
+    "Interface Web Simple d'éligible ou non  du client à un crédit"
 )
 
 
