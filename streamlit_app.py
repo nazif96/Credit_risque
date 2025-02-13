@@ -7,7 +7,6 @@ st.write(
     "Interface Web Simple d'éligible ou non  du client à un crédit"
 )
 
-
 # Charger le modèle
 model = joblib.load("xgboost_model.joblib")
 
