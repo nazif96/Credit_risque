@@ -76,6 +76,6 @@ if st.sidebar.button("📊 Prédire"):
     st.write(f"📊 **Probabilité d'éligibilité au crédit** : `{prob_good:.2%}`")
 
     if statut == "GOOD":
-        st.success("✅ Le client est éligible au crédit !")
+        st.success("✅ Le cSlient est éligible au crédit !")
     else:
         st.error("❌ Le client n'est pas éligible au crédit.")
