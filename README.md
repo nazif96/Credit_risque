@@ -10,7 +10,7 @@ Amélioration de la précision du modèle à 76,5%
 - Deploiement de l'application
 
    ```
-     $  https://credit-risque-app.streamlit.app/
+       https://credit-risque-app.streamlit.app/
    ```
   
 
