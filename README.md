@@ -7,16 +7,23 @@ Amélioration de la précision du modèle à 76,5%
 
 - Developpement d'Interface Web Simple d'  éligible ou non  du client à un crédit
 
+- Deploiement de l'application
 
-### How to run it on your own machine
+   ```
+     $  https://credit-risque-app.streamlit.app/
+   ```
+  
 
-1. Install the requirements
+
+###  Comment l'exécuter sur votre propre machine
+
+1. Installer les pré-requis
 
    ```
    $ pip install -r requirements.txt
    ```
 
-2. Run the app
+2. Exécuter l'application
 
    ```
    $ streamlit run streamlit_app.py
