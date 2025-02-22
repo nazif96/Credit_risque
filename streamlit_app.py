@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 
 # Charger le modèle
-model = joblib.load("logistic_regression_model.joblib")
+model = joblib.load("log_reg_model.joblib")
 
 # Interface utilisateur
 st.title("Prédiction de l'Éligibilité au Crédit")
