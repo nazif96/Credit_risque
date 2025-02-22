@@ -10,10 +10,14 @@ except Exception as e:
     st.error(f"Erreur lors du chargement du modèle : {e}")
     st.stop()
 
-# Définir manuellement les features attendues si elles sont connues
-FEATURES_EXPECTED = [
-    "age", "revenu", "historique_credit_Bon", "historique_credit_Mauvais", "montant_loan"
-]  # Ajuste cette liste en fonction du modèle
+# Essayer d'afficher les features attendues
+try:
+    feature_names = model.feature_names_in_
+    st.write(f"📌 Le modèle attend {model.n_features_in_} features.")
+    st.write(f"🔍 Features attendues : {list(feature_names)}")
+except AttributeError:
+    st.warning("Impossible de récupérer les noms des features. Vérifie comment les données ont été prétraitées avant l'entraînement.")
+    feature_names = None
 
 # Interface utilisateur
 st.title("📊 Prédiction de l'Éligibilité au Crédit")
@@ -27,26 +31,27 @@ with st.form("credit_form"):
     submit = st.form_submit_button("Prédire")
 
 if submit:
-    # Création du DataFrame
+    # Création du DataFrame avec les données de l'utilisateur
     data = {
         "age": [age],
         "revenu": [revenu],
         "historique_credit": [historique_credit],
         "montant_loan": [montant_loan]
     }
-
+    
     X_new = pd.DataFrame(data)
 
     # **Encodage manuel des variables catégorielles (One-Hot Encoding)**
     X_new = pd.get_dummies(X_new, columns=["historique_credit"])
 
-    # Ajouter les colonnes manquantes avec des valeurs par défaut (0 pour One-Hot Encoding)
-    for col in FEATURES_EXPECTED:
-        if col not in X_new.columns:
-            X_new[col] = 0
+    # Ajouter les colonnes manquantes avec des valeurs par défaut (0 pour les catégoriques)
+    if feature_names is not None:
+        missing_cols = set(feature_names) - set(X_new.columns)
+        for col in missing_cols:
+            X_new[col] = 0  # Valeur par défaut
 
-    # Réordonner les colonnes selon celles attendues par le modèle
-    X_new = X_new[FEATURES_EXPECTED]
+        # Réordonner les colonnes pour qu'elles soient dans le même ordre que celles du modèle
+        X_new = X_new[feature_names]
 
     try:
         # Vérifier que le nombre de features correspond
