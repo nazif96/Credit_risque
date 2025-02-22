@@ -3,14 +3,17 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-# Charger le modèle et le préprocesseur (si applicable)
+# Charger le modèle
 try:
     model = joblib.load("log_reg_model.joblib")
-    preprocessor = joblib.load("preprocessor.joblib")  # Charger le pipeline de prétraitement s'il existe
-    feature_names = joblib.load("feature_names.joblib")  # Charger les noms des colonnes utilisées à l'entraînement
 except Exception as e:
-    st.error(f"Erreur lors du chargement du modèle ou des preprocessors : {e}")
+    st.error(f"Erreur lors du chargement du modèle : {e}")
     st.stop()
+
+# Définir manuellement les features attendues si elles sont connues
+FEATURES_EXPECTED = [
+    "age", "revenu", "historique_credit_Bon", "historique_credit_Mauvais", "montant_loan"
+]  # Ajuste cette liste en fonction du modèle
 
 # Interface utilisateur
 st.title("📊 Prédiction de l'Éligibilité au Crédit")
@@ -24,34 +27,28 @@ with st.form("credit_form"):
     submit = st.form_submit_button("Prédire")
 
 if submit:
-    # Créer un dictionnaire avec les données de l'utilisateur
+    # Création du DataFrame
     data = {
         "age": [age],
         "revenu": [revenu],
         "historique_credit": [historique_credit],
         "montant_loan": [montant_loan]
     }
-    
+
     X_new = pd.DataFrame(data)
 
+    # **Encodage manuel des variables catégorielles (One-Hot Encoding)**
+    X_new = pd.get_dummies(X_new, columns=["historique_credit"])
+
+    # Ajouter les colonnes manquantes avec des valeurs par défaut (0 pour One-Hot Encoding)
+    for col in FEATURES_EXPECTED:
+        if col not in X_new.columns:
+            X_new[col] = 0
+
+    # Réordonner les colonnes selon celles attendues par le modèle
+    X_new = X_new[FEATURES_EXPECTED]
+
     try:
-        # Appliquer le prétraitement si nécessaire
-        if "preprocessor" in locals():
-            X_new = preprocessor.transform(X_new)
-
-        # Convertir en DataFrame avec les colonnes attendues
-        X_new = pd.DataFrame(X_new, columns=preprocessor.get_feature_names_out())
-
-        # Vérifier si des colonnes sont manquantes
-        missing_cols = set(feature_names) - set(X_new.columns)
-        if missing_cols:
-            st.warning(f"Colonnes manquantes ajoutées avec des valeurs par défaut : {missing_cols}")
-            for col in missing_cols:
-                X_new[col] = 0  # Valeur par défaut (ajuster selon le type des variables)
-
-        # Réordonner les colonnes selon le modèle
-        X_new = X_new[feature_names]
-
         # Vérifier que le nombre de features correspond
         if X_new.shape[1] != model.n_features_in_:
             st.error(f"Erreur : Le modèle attend {model.n_features_in_} features, mais {X_new.shape[1]} ont été fournies.")
